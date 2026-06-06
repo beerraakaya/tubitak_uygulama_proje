@@ -6,6 +6,14 @@ import json
 from fastapi.responses import FileResponse
 
 app= FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"], 
+)
 servis= DetectionService()
 
 bilgiler={
@@ -66,7 +74,7 @@ def rapor_olustur():
             "hata_tipi":hata["hata_tipi"],
             "metre_bilgisi":hata["metre_bilgisi"],
             "guven_skoru":hata["guven_skoru"],
-            "tarih":hata["tarih"]
+            "zaman_bilgisi":hata["zaman_bilgisi"]
         }
         for hata in bulunan_hatalar
     ]

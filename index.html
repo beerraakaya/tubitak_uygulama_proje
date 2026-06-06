@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Yüzey Hatası Tespit Paneli</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        input { padding: 8px; width: 200px; margin-right: 10px; }
+        button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; color: white; margin-right: 5px; }
+        .btn-baslat { background-color: #28a745; }
+        .btn-durdur { background-color: #dc3545; }
+        .btn-resetle { background-color: #ffc107; color: black; }
+        .btn-rapor { background-color: #17a2b8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .durum { font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div class="panel">
+        <h2>Operatör Girişi</h2>
+        <div class="form-group">
+            <input type="text" id="urunAdi" placeholder="Ürün Adı (Örn: Alüminyum Profil)">
+            <input type="text" id="urunId" placeholder="Ürün Etiketi / ID">
+            <input type="number" id="esikDegeri" placeholder="Eşik Değeri (Örn: 0.70)" step="0.01">
+        </div>
+        <div>
+            <button class="btn-baslat" onclick="sistemiBaslat()">Başlat</button>
+            <button class="btn-durdur" onclick="sistemiDurdur()">Durdur</button>
+            <button class="btn-resetle" onclick="sistemiResetle()">Resetle</button>
+            <button class="btn-rapor" onclick="raporOlustur()">Rapor Oluştur</button>
+        </div>
+        <p class="durum">Sistem Durumu: <span id="durumMetni">Bekliyor</span></p>
+    </div>
+
+    <div class="panel">
+        <h2>Tespit Edilen Hatalar</h2>
+        <table id="hataTablosu">
+            <thead>
+                <tr>
+                    <th>Hata Tipi</th>
+                    <th>Metre Bilgisi</th>
+                    <th>Güven Skoru</th>
+                    <th>Zaman Bilgisi</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        let simulasyonDöngüsü;
+
+        async function sistemiBaslat() {
+            const urunAdi = document.getElementById("urunAdi").value || "Bilinmiyor";
+            const urunId = document.getElementById("urunId").value || "Bilinmiyor";
+            const esikDegeri = parseFloat(document.getElementById("esikDegeri").value) || 0.50;
+
+            const response = await fetch(`${API_URL}/baslat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ urun_adi: urunAdi, urun_etiketi: urunId, esik_degeri: esikDegeri })
+            });
+
+            if (response.ok) {
+                document.getElementById("durumMetni").innerText = "Çalışıyor... (Kamera Dinleniyor)";
+                document.getElementById("durumMetni").style.color = "green";
+                // Saniyede bir kameradan görüntü geliyormuş gibi servise istek at
+                simulasyonDöngüsü = setInterval(kameraKontrol, 1000);
+            }
+        }
+
+        async function sistemiDurdur() {
+            await fetch(`${API_URL}/durdur`, { method: "POST" });
+            clearInterval(simulasyonDöngüsü);
+            document.getElementById("durumMetni").innerText = "Durduruldu.";
+            document.getElementById("durumMetni").style.color = "red";
+        }
+
+        async function sistemiResetle() {
+            await fetch(`${API_URL}/resetle`, { method: "POST" });
+            clearInterval(simulasyonDöngüsü);
+            document.getElementById("hataTablosu").getElementsByTagName('tbody')[0].innerHTML = "";
+            document.getElementById("durumMetni").innerText = "Sıfırlandı.";
+            document.getElementById("durumMetni").style.color = "orange";
+        }
+
+        async function raporOlustur() {
+            const response = await fetch(`${API_URL}/rapor_olustur`);
+            const data = await response.json();
+            alert(data.mesaj + "\nToplam Hata: " + data.rapor_icerigi.toplam_hata_sayisi);
+        }
+
+        async function kameraKontrol() {
+            const response = await fetch(`${API_URL}/kamera_simulasyonu`);
+            const data = await response.json();
+            
+            if (data.hata) {
+                const tbody = document.getElementById("hataTablosu").getElementsByTagName('tbody')[0];
+                const satir = tbody.insertRow(0); // Yeni hatayı en üste ekle
+                satir.innerHTML = `
+                    <td>${data.hata.hata_tipi}</td>
+                    <td>${data.hata.metre_bilgisi} m</td>
+                    <td>${data.hata.guven_skoru}</td>
+                    <td>${data.hata.zaman_bilgisi}</td>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

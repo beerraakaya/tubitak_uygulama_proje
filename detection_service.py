@@ -39,17 +39,16 @@ class DetectionService:
                     "hata_tipi": gercek_hata_tipi,
                     "metre_bilgisi": round(random.uniform(0, 100), 2),
                     "guven_skoru": guven_skoru,
-                    "tarih": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "zaman_bilgisi": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-        else:
-            return None
+       
         guven_skoru=round(random.uniform(0, 1), 2)
-        if guven_skoru >= esik_degeri:
+        if guven_skoru < esik_degeri:
             return None
         return {
             "hata_tipi": random.choice(self.hatatype),
             "metre_bilgisi": round(random.uniform(0, 100), 2),
             "guven_skoru": guven_skoru,
-            "tarih": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "zaman_bilgisi": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
