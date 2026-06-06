@@ -44,4 +44,22 @@ def sistemi_resetle():
     bulunan_hatalar=[]
     return {"message":"Sistem resetlendi", "bilgiler":bilgiler, "bulunan_hatalar":bulunan_hatalar}
 
-
+@app.get("/rapor_olustur")
+def rapor_olustur():
+    hata_detaylari=[
+        {
+            "hata_tipi":hata["hata_tipi"],
+            "metre_bilgisi":hata["metre_bilgisi"],
+            "guven_skoru":hata["guven_skoru"],
+            "tarih":hata["tarih"]
+        }
+        for hata in bulunan_hatalar
+    ]
+    rapor={
+        "urun_adi": bilgiler.get("urun_adi", ""),
+        "urun_etiketi": bilgiler.get("urun_etiketi", ""),
+        "esik_degeri": bilgiler.get("esik_degeri", 0.0),
+        "toplam_hata_sayisi": len(bulunan_hatalar),
+        "hata_detaylari": hata_detaylari
+    }
+    return rapor
