@@ -5,6 +5,7 @@ from detection_service import DetectionService
 import json
 from fastapi.responses import FileResponse
 
+
 app= FastAPI()
 
 app.add_middleware(
@@ -87,7 +88,8 @@ def rapor_olustur():
     }
     with open("rapor.json", "w", encoding="utf-8") as dosya:
         json.dump(rapor, dosya, ensure_ascii=False, indent=4)
-    return {
-        "message": "Rapor oluşturuldu",
-        "rapor": rapor
-    }
+    return FileResponse(
+        path="rapor.json", 
+        filename="hata_raporu.json", 
+        media_type="application/json"
+    )
