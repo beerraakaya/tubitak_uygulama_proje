@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from detection_service import DetectionService
+import json
+from fastapi.responses import FileResponse
 
 app= FastAPI()
 servis= DetectionService()
@@ -18,7 +20,11 @@ class OperatorGirdisi(BaseModel):
     urun_adi: str
     urun_etiketi: str
     esik_degeri: float
-
+    
+@app.get("/")
+def ana_sayfayi_goster():
+    return FileResponse("index.html")
+                        
 @app.post("/baslat")
 def sistemi_baslat(girdi: OperatorGirdisi):
     global bilgiler, bulunan_hatalar
@@ -44,6 +50,15 @@ def sistemi_resetle():
     bulunan_hatalar=[]
     return {"message":"Sistem resetlendi", "bilgiler":bilgiler, "bulunan_hatalar":bulunan_hatalar}
 
+@app.get("/kamera_simulasyonu")
+def kamera_simulasyonu():
+    sahte_goruntu_yolu="test-fotografi.jpg"
+    hata=servis.model_tahmini_yap(sahte_goruntu_yolu, bilgiler["esik_degeri"])
+    if hata:
+        bulunan_hatalar.append(hata)
+        
+    return {"hata":hata}
+    
 @app.get("/rapor_olustur")
 def rapor_olustur():
     hata_detaylari=[
@@ -62,4 +77,9 @@ def rapor_olustur():
         "toplam_hata_sayisi": len(bulunan_hatalar),
         "hata_detaylari": hata_detaylari
     }
-    return rapor
+    with open("rapor.json", "w", encoding="utf-8") as dosya:
+        json.dump(rapor, dosya, ensure_ascii=False, indent=4)
+    return {
+        "message": "Rapor oluşturuldu",
+        "rapor": rapor
+    }
